@@ -16,6 +16,8 @@ def parse_header(fp, pattern=header_pattern):
         if '\\' in val:
             # value is a sequence
             val = val.split('\\')
+        elif ',' in val and vr == 'US':
+            val = val.split(',')
             
         de = dicom.dataelem.DataElement(tag_from_str(gs, es), vr, val)
         #if de.tag != (0x02, 0x00):
