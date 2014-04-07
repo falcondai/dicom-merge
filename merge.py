@@ -55,7 +55,8 @@ if __name__ == '__main__':
         os.mkdir(output_dir)
         print 'Created directory %s' % output_dir
 
-    raw_fns = glob.glob(os.path.join(dir_path, 'raw', '*.raw'))
+    raw_fns = sorted(glob.glob(os.path.join(dir_path, 'raw', '*.raw')))
+    print 'there %d raw files under %s' % (len(raw_fns), dir_path)
     for raw_fn in raw_fns:
         fn = os.path.basename(raw_fn)[:-4]
 
@@ -66,6 +67,7 @@ if __name__ == '__main__':
         else:
             print 'WARNING: no corresponding header file found for %s' % raw_fn
             if args.skip:
+                print 'skipped'
                 continue
             else:
                 sys.exit(1)
