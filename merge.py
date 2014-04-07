@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import sys, re, glob, os
 
 import dicom
@@ -33,25 +35,43 @@ def merge_header_raw(dataset, raw, filename):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        print 'Usage: %s <path-to-CT-or-MRI>' % sys.argv[0]
-        sys.exit(1)
-    dir_path = sys.argv[1]
+    import argparse
+    
+    parser = argparse.ArgumentParser()
+    parser.add_argument('path', help='path to CT/MR directory')
+    parser.add_argument('-f', '--force', action='store_true', help='overwrite dicom folder if it already exists')
+    parser.add_argument('-s', '--skip', action='store_true', help='skip raw files without corresponding header files')
 
+    args = parser.parse_args()
+
+    dir_path = args.path
     output_dir = os.path.join(dir_path, 'dicom')
-    if os.path.exists(output_dir):
+    if os.path.exists(output_dir) and not args.force:
         # don't overwrite existing dicom directory
         print 'WARNING: output directory %s exists' % output_dir
         sys.exit(1)
-    else:
+
+    if not os.path.exists(output_dir):
         os.mkdir(output_dir)
         print 'Created directory %s' % output_dir
 
     raw_fns = glob.glob(os.path.join(dir_path, 'raw', '*.raw'))
     for raw_fn in raw_fns:
         fn = os.path.basename(raw_fn)[:-4]
-        with open(os.path.join(dir_path, 'headers', '%s.txt' % fn), 'rb') as header:
+
+        if os.path.exists(os.path.join(dir_path, 'headers', '%s.txt' % fn)):
+            header_path = os.path.join(dir_path, 'headers', '%s.txt' % fn)
+        elif os.path.exists(os.path.join(dir_path, 'headers', '%s.dcm.txt' % fn)):
+            header_path = os.path.join(dir_path, 'headers', '%s.dcm.txt' % fn)
+        else:
+            print 'WARNING: no corresponding header file found for %s' % raw_fn
+            if args.skip:
+                continue
+            else:
+                sys.exit(1)
+        with open(header_path, 'rb') as header:
             ds = parse_header(header)
+
         with open(raw_fn, 'rb') as raw:
             output_fn = os.path.join(output_dir, '%s.dcm' % fn)
             print 'writing %s' % output_fn
